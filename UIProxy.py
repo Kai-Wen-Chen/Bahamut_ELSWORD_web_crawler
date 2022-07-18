@@ -2,18 +2,22 @@ import abc
 
 from MacroDefine import (
     QUESTION_CONTENT_SOURCE, QUESTION_NEED_PAGE_RANGE, QUESTION_PAGE_START, QUESTION_PAGE_END, QUESTION_WRITE_DATA,
-    SELECTION_CONTENT_SOURCE, SELECTION_NEED_PAGE_RANGE, SELECTION_WRITE_DATA
+    INPUT_CONTENT_SOURCE, INPUT_NEED_PAGE_RANGE, INPUT_WRITE_DATA, QUESTION_KEYWORD
 )
 
 
-def ask(question='', selection='', numSelect=3):
-    print(question)
+def ask(question='', inputText='', numSelect=3):
+    if question:
+        print(question)
     try:
-        ret = input(selection)
+        ret = input(inputText)
     except EOFError:
         return 0
 
-    ans = getSelection(ret, numSelect)
+    if numSelect > 0:
+        ans = getSelection(ret, numSelect)
+    else:
+        ans = ret
     return ans
 
 
@@ -42,6 +46,14 @@ class UIProxy(abc.ABC):
     def askWriteData(self):
         return NotImplemented
 
+    @abc.abstractmethod
+    def askKeyWord(self):
+        return NotImplemented
+
+    @abc.abstractmethod
+    def printMessage(self, messages=None):
+        return NotImplemented
+
 
 class MyUIProxy(UIProxy, BaseException):
     def __init__(self):
@@ -50,7 +62,7 @@ class MyUIProxy(UIProxy, BaseException):
 
     def askContentSource(self):
         while True:
-            ret = ask(QUESTION_CONTENT_SOURCE, SELECTION_CONTENT_SOURCE)
+            ret = ask(QUESTION_CONTENT_SOURCE, INPUT_CONTENT_SOURCE)
             if ret == 0:
                 print('You input an invalid option, please try again')
             else:
@@ -60,7 +72,7 @@ class MyUIProxy(UIProxy, BaseException):
 
     def askPageRange(self, numPage=1):
         while True:
-            ret = ask(QUESTION_NEED_PAGE_RANGE, SELECTION_NEED_PAGE_RANGE, numSelect=2)
+            ret = ask(QUESTION_NEED_PAGE_RANGE, INPUT_NEED_PAGE_RANGE, numSelect=2)
             if ret == 0:
                 print('You input an invalid option, please try again')
             else:
@@ -99,10 +111,22 @@ class MyUIProxy(UIProxy, BaseException):
 
     def askWriteData(self):
         while True:
-            ret = ask(QUESTION_WRITE_DATA, SELECTION_WRITE_DATA)
+            ret = ask(QUESTION_WRITE_DATA, INPUT_WRITE_DATA)
             if ret == 0:
                 print('You input an invalid option, please try again')
             else:
                 break
 
         return True if ret == 1 else False
+
+    def askKeyWord(self):
+        ret = ask(QUESTION_KEYWORD, '', 0)
+
+        return ret
+
+    def printMessage(self, messages=None):
+        if isinstance(messages, list):
+            for message in messages:
+                print(message)
+        elif isinstance(messages, str):
+            print(messages)

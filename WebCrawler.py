@@ -19,6 +19,10 @@ class WebCrawler(abc.ABC):
         pass
 
     @abc.abstractmethod
+    def getOnlineContent(self):
+        return NotImplemented
+
+    @abc.abstractmethod
     def _request(self, url):
         return NotImplemented
 
@@ -32,8 +36,11 @@ class MyWebCrawler(WebCrawler, BaseException):
         self._mode = 'online'
         self._pageStart = 1
         self._pageEnd = -1
+        self._keyword = ''
         self._dicFloor2Content = dict()
 
+    def start(self):
+        self.__reset()
         self.__askContentSource()
         if self._mode == 'online':
             self.getOnlineContent()
@@ -44,6 +51,7 @@ class MyWebCrawler(WebCrawler, BaseException):
         self.__requestSoup(URL_ELSWORD)
 
         self.__getTotalPageNumber()
+        self.__askKeyword()
         self.__askPageRange()
 
         for i in range(self._pageStart, self._pageEnd + 1):
@@ -54,24 +62,46 @@ class MyWebCrawler(WebCrawler, BaseException):
             lsFloor = self.__getFloorList()
 
             self._dicFloor2Content.update(dict(zip(lsFloor, lsContent)))
-            print('Page %d updated' % i)
+            self._uiProxy.printMessage('Page %d updated' % i)
             time.sleep(random.uniform(1.0, 3.0))
 
-        print('Update complete')
+        self._uiProxy.printMessage('Update complete')
+
+        dicResult = dict()
+        if self._keyword:
+            for floor, content in self._dicFloor2Content.items():
+                if self._keyword in content:
+                    dicResult[floor] = content
+
+            if dicResult:
+                self._uiProxy.printMessage(['Matched floors:', str(list(dicResult.keys()))])
 
         if self.__askWriteData():
-            self.__writeData()
+            self.__writeData(dicResult)
 
     def getLocalContent(self):
         if not os.path.exists(LOCAL_JSON_PATH) or not os.path.isfile(LOCAL_JSON_PATH):
-            print('The local file doesn\'t exist')
-            print('End program')
+            self._uiProxy.printMessage(['The local file doesn\'t exist', 'End program'])
             sys.exit(1)
 
         with open(LOCAL_JSON_PATH, 'r', encoding='utf-8') as f:
             self._dicFloor2Content = json.load(f)
 
-        print('Update complete')
+        self._uiProxy.printMessage('Update complete')
+
+        self.__askKeyword()
+
+        dicResult = dict()
+        if self._keyword:
+            for floor, content in self._dicFloor2Content.items():
+                if self._keyword in content:
+                    dicResult[floor] = content
+
+            if dicResult:
+                self._uiProxy.printMessage(['Matched floors:', str(list(dicResult.keys()))])
+
+        if self.__askWriteData():
+            self.__writeData(dicResult)
 
     # --------------- protected method -----------------#
     def _request(self, url):
@@ -83,15 +113,15 @@ class MyWebCrawler(WebCrawler, BaseException):
             request = requests.get(url, headers=headers)
         except requests.exceptions.Timeout:
             # Maybe set up for a retry, or continue in a retry loop
-            print('Timeout, end program')
+            self._uiProxy.printMessage('Timeout, end program')
             sys.exit(1)
         except requests.exceptions.TooManyRedirects:
             # Tell the user their URL was bad and try a different one
-            print('Weird URL, end program')
+            self._uiProxy.printMessage('Weird URL, end program')
             sys.exit(1)
         except requests.exceptions.RequestException as e:
             # catastrophic error.
-            print('Request failed, end program')
+            self._uiProxy.printMessage('Request failed, end program')
             sys.exit(1)
 
         return request
@@ -104,6 +134,9 @@ class MyWebCrawler(WebCrawler, BaseException):
             sys.exit(0)
 
         self._mode = 'online' if ans == 1 else 'local'
+
+    def __askKeyword(self):
+        self._keyword = self._uiProxy.askKeyWord()
 
     def __askPageRange(self):
         self._pageStart, self._pageEnd = self._uiProxy.askPageRange(self._numPage)
@@ -142,7 +175,22 @@ class MyWebCrawler(WebCrawler, BaseException):
 
         return lsFloor
 
-    def __writeData(self):
+    def __writeData(self, data):
         import json
-        with open(LOCAL_JSON_PATH, 'w', encoding='utf-8') as f:
-            json.dump(self._dicFloor2Content, f, ensure_ascii=False, indent=4)
+        try:
+            with open(LOCAL_JSON_PATH, 'w', encoding='utf-8') as f:
+                if data:
+                    json.dump(data, f, ensure_ascii=False, indent=4)
+                else:
+                    json.dump(self._dicFloor2Content, f, ensure_ascii=False, indent=4)
+            self._uiProxy.printMessage('Result stored')
+        except EnvironmentError:
+            self._uiProxy.printMessage('Something wrong, maybe the disk is full')
+
+    def __reset(self):
+        self._numPage = 0
+        self._mode = 'online'
+        self._pageStart = 1
+        self._pageEnd = -1
+        self._keyword = ''
+        self._dicFloor2Content = dict()
