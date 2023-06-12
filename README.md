@@ -1,5 +1,8 @@
-# Bahamut_ELSWORD_web_crawler
+# Bahamut_ELSWORD_web_crawler (Currently, this crawler is disabled)
 巴哈姆特場外艾爾之光討論串(第三串)爬蟲練習
+
+- **目前這個爬蟲無法使用 因為巴哈現在要求使用者必須登入才能瀏覽場外休憩區 因此這個爬蟲會被擋**
+- **Currently, this crawler cannot work because the contents cannot be accessed unless user log in Bahamut**
 
 此爬蟲僅限場外艾爾之光第三串使用 可支援最新網站資料及本地資料搜尋
 
