@@ -1,4 +1,9 @@
 from bs4 import BeautifulSoup
+from selenium import webdriver
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.common.by import By
+from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import json
 import os
 import random
@@ -7,7 +12,7 @@ import sys
 import time
 
 from MacroDefine import (
-    LOCAL_JSON_PATH, URL_ELSWORD, URL_GAMER, URL_PAGE, URL_TAIL, USER_AGENT
+    LOCAL_JSON_PATH, URL_ELSWORD, URL_GAMER, URL_PAGE, URL_TAIL, USER_AGENT, URL_LOGIN
 )
 from UIProxy import MyUIProxy
 
@@ -44,10 +49,14 @@ class OnlineContentContainer(ContentContainer):
         self._numPage = 0
         self._pageStart = 1
         self._pageEnd = -1
+        self._driver = None
 
     # --------------- overwrite method -----------------#
     def load(self):
-        self.__requestSoup(URL_ELSWORD)
+        self.__initWebDriver()
+        self.__loginBahamut()
+        # Currently, it's not enable to customize the directed url, will remain a future feature
+        self.__redirectToURL(URL_ELSWORD)
 
         self.__getTotalPageNumber()
         self._askKeyword()
@@ -84,6 +93,9 @@ class OnlineContentContainer(ContentContainer):
         self._pageEnd = -1
         self._keyword = ''
         self._dicFloor2Content = dict()
+        #if self._driver is not None:
+        #    self._driver.close()
+        #    self._driver = None
 
     # --------------- protected method -----------------#
     def _request(self, url):
@@ -117,15 +129,72 @@ class OnlineContentContainer(ContentContainer):
     def __askWriteData(self):
         return self._uiProxy.askWriteData()
 
-    def __requestSoup(self, url):
-        request = self._request(url)
-        if not request:
-            return None
+    def __initWebDriver(self):        
+        self._uiProxy.printMessage('Init webcrawler...')
+        if self._driver is not None:
+            self._driver.close()
+            self._driver = None
 
-        self._soup = BeautifulSoup(request.text, 'html.parser')
+        options = webdriver.ChromeOptions()
+        options.add_argument('start-maximized')
+        options.add_argument('--headless')
+        options.add_argument(f'--user-agent={USER_AGENT}')
+        options.add_argument('--no-sandbox')
+        options.add_experimental_option('excludeSwitches', ['enable-automation'])
+        options.add_experimental_option('useAutomationExtension', False)
+        self._driver = webdriver.Chrome(options=options)
+        self._driver.get(URL_LOGIN)
+        
+    def __loginBahamut(self):
+        def loginAccountInfo():
+            userIdInputBox = self._driver.find_element(By.NAME, 'userid')
+            passwordInputBox = self._driver.find_element(By.NAME, 'password')
+            
+            userId = self._uiProxy.askUserId()
+            if not userId:
+                sys.exit(0)
+            
+            password = self._uiProxy.askUserPassword()
+            if not password:
+                sys.exit(0)
+
+            self._uiProxy.printMessage('Logging...')
+            for c in userId:
+                t = random.random()
+                time.sleep(t)
+                userIdInputBox.send_keys(c)
+
+            for c in password:
+                t = random.random()
+                time.sleep(t)
+                passwordInputBox.send_keys(c)
+
+            loginBtn = self._driver.find_element(By.ID, 'btn-login')
+            loginBtn.click()
+        
+        self._driver.refresh()
+        loginAccountInfo()
+        try:
+            self._uiProxy.printMessage('Checking login status...')
+            WebDriverWait(self._driver, 3).until(EC.url_to_be('https://www.gamer.com.tw/'))
+        except TimeoutException:
+            self._uiProxy.printMessage('Login failed or timeout, please retry')
+            self.__loginBahamut()
+
+        self._uiProxy.printMessage('Login success')
+
+    def __redirectToURL(self, url=URL_ELSWORD):
+        self._driver.get(url)
+        try:
+            self._uiProxy.printMessage('Redirecting to %s' % url)
+            WebDriverWait(self._driver, 3).until(EC.url_to_be(url))
+        except TimeoutException:
+            self._uiProxy.printMessage('Redirecting to %s timout, end program' % url)
+            sys.exit(0)
 
     def __getTotalPageNumber(self):
-        pgBtn = self._soup.select_one('p.BH-pagebtnA')
+        #pgBtn = self._soup.select_one('p.BH-pagebtnA')
+        pgBtn = self._driver.find_element(By.ID, 'BH-pagebtnA')
         self._numPage = int(pgBtn.contents[-1].text)
 
     def __getContentList(self):

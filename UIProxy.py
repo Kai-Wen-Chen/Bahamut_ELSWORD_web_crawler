@@ -2,7 +2,7 @@ import abc
 
 from MacroDefine import (
     QUESTION_CONTENT_SOURCE, QUESTION_NEED_PAGE_RANGE, QUESTION_PAGE_START, QUESTION_PAGE_END, QUESTION_WRITE_DATA,
-    INPUT_CONTENT_SOURCE, INPUT_NEED_PAGE_RANGE, INPUT_WRITE_DATA, QUESTION_KEYWORD
+    INPUT_USER_ID, INPUT_USER_PASSWORD, INPUT_CONTENT_SOURCE, INPUT_NEED_PAGE_RANGE, INPUT_WRITE_DATA, QUESTION_KEYWORD
 )
 
 
@@ -68,6 +68,18 @@ class MyUIProxy(UIProxy, BaseException):
             else:
                 break
 
+        return ret
+    
+    def askUserId(self):
+        ret = ask(inputText=INPUT_USER_ID, numSelect=0)
+        if not ret:
+            print('Empty user id, end program')
+        return ret
+    
+    def askUserPassword(self):
+        ret = ask(inputText=INPUT_USER_PASSWORD, numSelect=0)
+        if not ret:
+            print('Empty user password, end program')
         return ret
 
     def askPageRange(self, numPage=1):
