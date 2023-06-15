@@ -3,13 +3,13 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import NoSuchElementException, TimeoutException
+from selenium.common.exceptions import TimeoutException
 import json
 import os
 import random
-import requests
 import sys
 import time
+import traceback
 
 from MacroDefine import (
     LOCAL_JSON_PATH, URL_ELSWORD, URL_GAMER, URL_PAGE, URL_TAIL, USER_AGENT, URL_LOGIN
@@ -58,21 +58,24 @@ class OnlineContentContainer(ContentContainer):
         # Currently, it's not enable to customize the directed url, will remain a future feature
         self.__redirectToURL(URL_ELSWORD)
 
+        self._uiProxy.printMessage('Success to access url %s' % URL_ELSWORD)
+
         self.__getTotalPageNumber()
         self._askKeyword()
         self.__askPageRange()
-
+        
         for i in range(self._pageStart, self._pageEnd + 1):
+            self._uiProxy.printMessage('Update page %d ...' % i)
             url = URL_GAMER + URL_PAGE + str(i) + URL_TAIL
-            self.__requestSoup(url)
+            self.__request(url)
 
             lsContent = self.__getContentList()
             lsFloor = self.__getFloorList()
 
             self._dicFloor2Content.update(dict(zip(lsFloor, lsContent)))
             self._uiProxy.printMessage('Page %d updated' % i)
-            time.sleep(random.uniform(0.5, 2.0))
-
+            time.sleep(random.uniform(0.5, 1.0))
+        
         self._uiProxy.printMessage('Update complete')
 
         dicResult = dict()
@@ -93,34 +96,19 @@ class OnlineContentContainer(ContentContainer):
         self._pageEnd = -1
         self._keyword = ''
         self._dicFloor2Content = dict()
-        #if self._driver is not None:
-        #    self._driver.close()
-        #    self._driver = None
-
-    # --------------- protected method -----------------#
-    def _request(self, url):
-        headers = {
-            'User-Agent': USER_AGENT
-        }
-
-        try:
-            request = requests.get(url, headers=headers)
-        except requests.exceptions.Timeout:
-            # Maybe set up for a retry, or continue in a retry loop
-            self._uiProxy.printMessage('Timeout, end program')
-            sys.exit(1)
-        except requests.exceptions.TooManyRedirects:
-            # Tell the user their URL was bad and try a different one
-            self._uiProxy.printMessage('Weird URL, end program')
-            sys.exit(1)
-        except requests.exceptions.RequestException as e:
-            # catastrophic error.
-            self._uiProxy.printMessage('Request failed, end program')
-            sys.exit(1)
-
-        return request
+        if self._driver is not None:
+            self._driver.close()
+            self._driver = None
 
     # --------------- private method -----------------#
+    def __request(self, url):
+        try:
+            self._driver.get(url)
+        except:
+            traceback.print_exc()
+            self._uiProxy.printMessage('Exception occurred, end program')
+            sys.exit(0)
+
     def __askPageRange(self):
         self._pageStart, self._pageEnd = self._uiProxy.askPageRange(self._numPage)
         if self._pageEnd == -1:
@@ -140,6 +128,7 @@ class OnlineContentContainer(ContentContainer):
         options.add_argument('--headless')
         options.add_argument(f'--user-agent={USER_AGENT}')
         options.add_argument('--no-sandbox')
+        options.add_argument('--blink-settings=imagesEnabled=false')
         options.add_experimental_option('excludeSwitches', ['enable-automation'])
         options.add_experimental_option('useAutomationExtension', False)
         self._driver = webdriver.Chrome(options=options)
@@ -193,12 +182,13 @@ class OnlineContentContainer(ContentContainer):
             sys.exit(0)
 
     def __getTotalPageNumber(self):
-        #pgBtn = self._soup.select_one('p.BH-pagebtnA')
-        pgBtn = self._driver.find_element(By.ID, 'BH-pagebtnA')
+        soup = BeautifulSoup(self._driver.page_source, 'html.parser')
+        pgBtn = soup.find(class_='BH-pagebtnA')
         self._numPage = int(pgBtn.contents[-1].text)
 
     def __getContentList(self):
-        contents = self._soup.select('.c-article__content')
+        soup = BeautifulSoup(self._driver.page_source, 'html.parser')
+        contents = soup.select('.c-article__content')
         lsContent = []
 
         for i in range(len(contents)):
@@ -207,7 +197,8 @@ class OnlineContentContainer(ContentContainer):
         return lsContent
 
     def __getFloorList(self):
-        postHeaders = self._soup.select('.c-post__header__author')
+        soup = BeautifulSoup(self._driver.page_source, 'html.parser')
+        postHeaders = soup.select('.c-post__header__author')
         lsFloor = []
 
         for i in range(len(postHeaders)):
