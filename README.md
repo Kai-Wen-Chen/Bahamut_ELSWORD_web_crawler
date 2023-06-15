@@ -25,7 +25,7 @@ Able to support online and local data search
   - By command line: ```python main.py``` (if you have **python-is-python3**) or ```python3 main.py```
   - By IDE: Run/Debug main.py
 
-### By exe (Currently dose not work)
+### By exe (Currently does not work)
 
 - 目前exe尚未更新 無法使用
 
