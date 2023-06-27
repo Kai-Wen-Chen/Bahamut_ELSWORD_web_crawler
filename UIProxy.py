@@ -6,7 +6,7 @@ from MacroDefine import (
 )
 
 
-def ask(question='', inputText='', numSelect=3):
+def ask(question='', inputText='', numSelect=3, defaultSelect=0):
     if question:
         print(question)
     try:
@@ -15,19 +15,21 @@ def ask(question='', inputText='', numSelect=3):
         return 0
 
     if numSelect > 0:
-        ans = getSelection(ret, numSelect)
+        ans = getSelection(ret, numSelect, defaultSelect)
     else:
         ans = ret
     return ans
 
 
-def getSelection(_input, numSelect=3):
+def getSelection(_input, numSelect=3, defaultSelect=0):
     try:
         ans = int(_input)
         if 1 <= ans <= numSelect:
             return ans
-    except TypeError:
-        return 0
+        else:
+            return numSelect + 1
+    except (TypeError, ValueError):
+        return numSelect + 1
 
 
 class UIProxy(abc.ABC):
@@ -142,3 +144,37 @@ class MyUIProxy(UIProxy, BaseException):
                 print(message)
         elif isinstance(messages, str):
             print(messages)
+
+    def showContents(self, dicResult):
+        if not dicResult:
+            print('No content')
+        
+        lsFloor = [int(floor) for floor in list(dicResult.keys())]
+        lsFloor.sort()
+        numPage = len(lsFloor) // 10 + (len(lsFloor) % 10 != 0)
+
+        for i in range(numPage):
+            for count in range(10):
+                if i * 10 + count >= len(lsFloor):
+                    break;
+                
+                floor = lsFloor[i * 10 + count]
+                print('#%s:' % floor)
+                print(dicResult[str(floor)])
+                print()
+            if i < numPage - 1:
+                ret = 0
+                while True:
+                    ret = ask('Do you want to show the next 10 results?', 'Press the related number to select, YES(1) / no(2): ', numSelect=2, defaultSelect=1)
+                    if ret != 1 and ret != 2:
+                        self.printMessage('You input an invalid option, please try again')
+                    else:
+                        break
+                
+                if ret == 2:
+                    self.printMessage()
+                    break
+            else:
+                self.printMessage('All results showed')
+        
+        print()

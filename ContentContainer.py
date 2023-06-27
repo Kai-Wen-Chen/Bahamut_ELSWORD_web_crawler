@@ -83,9 +83,12 @@ class OnlineContentContainer(ContentContainer):
             for floor, content in self._dicFloor2Content.items():
                 if self._keyword in content:
                     dicResult[floor] = content
+        else:
+            for floor, content in self._dicFloor2Content.items():
+                dicResult[floor] = content
 
-            if dicResult:
-                self._uiProxy.printMessage(['Matched floors:', str(list(dicResult.keys()))])
+        if dicResult:
+            self._uiProxy.showContents(dicResult)
 
         if self.__askWriteData():
             self.save(dicResult)
@@ -229,9 +232,12 @@ class LocalContentContainer(ContentContainer):
             for floor, content in self._dicFloor2Content.items():
                 if self._keyword in content:
                     dicResult[floor] = content
+        else:
+            for floor, content in self._dicFloor2Content.items():
+                dicResult[floor] = content
 
-            if dicResult:
-                self._uiProxy.printMessage(['Matched floors:', str(list(dicResult.keys()))])
+        if dicResult:
+            self._uiProxy.showContents(dicResult)
 
     def reset(self):
         self._keyword = ''
