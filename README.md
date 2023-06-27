@@ -37,25 +37,25 @@ Able to support online and local data search
 1. 輸入巴哈姆特帳密以登入 (**本爬蟲不會記錄任何帳密 只會傳送給巴哈登入系統**)
 2. 詢問是否要限制搜尋的頁數範圍 (只搜尋特定頁數範圍內的樓層或是全樓層搜尋)
 3. 詢問關鍵字(若無則直接抓下範圍內所有樓層)
-4. 顯示出符合搜尋條件的**樓層編號**
+4. 顯示出符合搜尋條件的**樓層編號和內文**
 5. 可將此次的搜尋存在本地(文件資料夾) 下次可直接使用本地紀錄節省時間
 -------------------------------------------------------------------------------------------------------
 1. Log in Bahamut (**This program won't keep any account and password, only pass them to Bahamut login system**)
 2. Ask user if need to restrict the page range to search (Search the floors within the page range only, or all floors)
 3. Ask keyword to search (If no keyword, will search all contents in designated page range)
-4. Show the **floor number** of all matched floors
+4. Show the **floor number and contents** of all matched floors
 5. User can save the search result to local for the requirement of reviewing the result in the future
 
 #### 本地 (Local)
 1. 詢問關鍵字(若無則直接顯示所有樓層)
-2. 顯示出符合的**樓層編號**
+2. 顯示出符合的**樓層編號和內文**
 -------------------------------------------------------------------------------------------------------
 1. Ask keyword to search (If no keyword, will show all floors in the local record)
-2. Show the floor number of all matched floors
+2. Show the **floor number and contents** of all matched floors
 
 ## TODO list (it is not guaranteed to implement with a certain schedule :p)
 
 1. 更新執行檔 (Update .exe)
-2. 顯示符合搜尋條件的**樓層內文** (Show the **contents** of matched floors)
+2. ~~顯示符合搜尋條件的**樓層內文** (Show the **contents** of matched floors)~~
 3. 優化搜尋方法 (Optimize searching method)
 4. 客製化想要爬蟲的討論串 (Customize the url to do web scraping)
